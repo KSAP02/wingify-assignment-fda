@@ -1,0 +1,32 @@
+# Core framework & orchestration
+crewai>=0.28.0
+crewai_tools>=0.13.0
+
+# Web server / API
+fastapi
+uvicorn[standard]
+
+# Env file support
+python-dotenv
+
+# File upload support for FastAPI (UploadFile / File)
+python-multipart
+aiofiles
+
+# Async HTTP clients commonly used by tools
+httpx
+requests
+
+# Compatibility helpers
+typing-extensions
+pydantic
+
+# PDF parsing / extraction
+pypdf
+pdfplumber
+
+# Number / mime helpers (optional)
+python-magic
+
+# Optional LLM / OpenAI support
+openai
