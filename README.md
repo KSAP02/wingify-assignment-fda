@@ -194,7 +194,6 @@ This eliminates the need for a frontend during development.
 
   * Tools don’t *have* to be async.
   * But in FastAPI + CrewAI context, async prevents blocking.
-  * Heavy sync libs (pypdf) were safely run with `run_in_executor`.
 
 * **Dependency management**
 
