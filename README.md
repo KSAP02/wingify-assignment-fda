@@ -164,7 +164,7 @@ curl -X POST "http://localhost:8000/analyze" \
 
 ## 🧪 Testing the API
 
-We included a `client.py` script for easy testing.
+Included a `client.py` script for easy testing.
 
 ### Usage:
 
@@ -178,7 +178,7 @@ python client.py
 * Sends a POST request to `/analyze`.
 * Prints JSON response with analysis and output file path.
 
-This avoids needing a frontend during development.
+This eliminates the need for a frontend during development.
 
 ---
 
