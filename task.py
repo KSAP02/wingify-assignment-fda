@@ -27,7 +27,7 @@ analyze_financial_document = Task(
         "Output should be concise, professional, and fact-based."
     ),
     agent=financial_analyst,
-    tools=[tool_read],
+    tools=[tool_read, tool_invest, tool_risk, tool_search],
     async_execution=False,
 )
 
@@ -45,12 +45,13 @@ investment_analysis = Task(
         "- Observed trends or anomalies in the data\n"
         "- Market or industry context from external sources (if relevant)\n"
         "- A clear investment recommendation (Buy / Hold / Sell) with rationale\n"
-        "- A confidence score (0.0–1.0) indicating certainty of the recommendation"
+        "- A confidence score (0.0 - 1.0) indicating certainty of the recommendation"
     ),
     agent=investment_advisor,
     tools=[
         tool_read,
         tool_invest,
+        tool_risk,
         tool_search
     ],
     async_execution=False,

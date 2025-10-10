@@ -5,7 +5,7 @@ API_URL = "http://localhost:8000/analyze"
 
 def test_analysis():
     # Point to a file already in your data/ folder
-    file_path = "data\TSLA-Q2-2025-Update.pdf"
+    file_path = r"data\TSLA-Q2-2025-Update.pdf"
     if not os.path.exists(file_path):
         print(f"ERROR: Test file {file_path} not found.")
         return

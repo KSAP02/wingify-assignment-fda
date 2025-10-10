@@ -3,3 +3,4 @@ fda_venv
 __pycache__
 test_outputs/
 testing/
+outputs/

@@ -27,19 +27,40 @@ tool_search = search_tool
 
 
 # Creating a Senior Financial Analyst agent
+# Creating a Senior Financial Analyst agent
 financial_analyst = Agent(
     role="Senior Financial Analyst",
     goal=(
-        "Analyze financial documents, assess risks, and provide clear, "
-        "well-structured investment insights based on both company filings "
-        "and external market information."
+        "Analyze financial documents thoroughly, evaluate investment potential, "
+        "assess associated risks, and provide final recommendations backed by "
+        "real-time market insights."
     ),
     backstory=(
-        "You are an experienced financial analyst with expertise in corporate "
-        "finance, equity research, and market analysis. You combine structured "
-        "financial document review with real-time market data to produce "
-        "investment recommendations. You are precise, data-driven, and "
-        "transparent about uncertainties in your analysis."
+        "You are a highly experienced financial analyst with deep expertise in "
+        "equity research, corporate finance, and risk evaluation.\n\n"
+        "When performing your analysis, you must always follow this exact sequence "
+        "using the available tools:\n\n"
+        
+        "1) **Read Financial Document Tool** — Use this first to extract and clean "
+        "the text from the provided PDF. Do not skip this step.\n\n"
+        "2) **Investment Analysis Tool** — Once you have the extracted text, use this "
+        "tool to perform a structured LLM-driven investment analysis. Include summaries, "
+        "key figures, profitability, growth insights, and clear recommendations from the read financial document tool result.\n\n"
+        "3) **Risk Assessment Tool** — After investment analysis, call this tool to "
+        "generate a risk profile of the company or financial report, identifying major "
+        "threats and opportunities.\n\n"
+        "4) **Search Tool (Serper)** — Finally, use this to check for any recent "
+        "market events, news, or macro-economic updates relevant to the company or "
+        "industry context. Summarize key findings.\n\n"
+        "After using all tools, synthesize a single, cohesive plain-text report that "
+        "includes:\n"
+        "• A concise **Summary** of findings\n"
+        "• Detailed **Investment Analysis**\n"
+        "• **Risk Assessment** insights\n"
+        "• **Recent Market Context** from the search tool\n"
+        "• And a final **Investment Recommendation** (buy/hold/sell)\n\n"
+        "Never skip any step or call fewer than three tools in your analysis process. "
+        "If one fails, continue with the remaining steps."
     ),
     tools=[
         tool_read,
@@ -50,10 +71,11 @@ financial_analyst = Agent(
     llm=llm,
     memory=True,
     verbose=True,
-    max_iter=3,
-    max_rpm=2,
-    allow_delegation=True
+    max_iter=6,  # allow multiple reasoning/tool-use cycles
+    max_rpm=5,
+    allow_delegation=False
 )
+
 
 # Creating a Financial Document Verifier agent
 verifier = Agent(
@@ -82,16 +104,33 @@ verifier = Agent(
 investment_advisor = Agent(
     role="Investment Advisor",
     goal=(
-        "Provide professional, data-driven investment advice based on company filings, "
-        "risk analysis, and real-time market context. Summarize key opportunities, "
-        "highlight risks, and make clear recommendations such as buy/hold/sell."
+        "Provide accurate, data-driven investment advice by combining financial document analysis, "
+        "risk evaluation, and current market insights. Use all available tools to develop balanced "
+        "buy/hold/sell recommendations supported by concrete reasoning."
     ),
     backstory=(
-        "You are a seasoned financial advisor with expertise in equity research, "
-        "portfolio management, and market strategy. You focus on aligning investment "
-        "recommendations with financial fundamentals and market conditions. "
-        "Your guidance is balanced, evidence-based, and avoids unnecessary hype. "
-        "You clearly explain the reasoning behind your recommendations."
+        "You are a seasoned investment advisor and market strategist specializing in equity research, "
+        "portfolio optimization, and asset allocation. You rely on quantitative fundamentals, "
+        "qualitative assessments, and live market context to guide your investment calls.\n\n"
+        "Whenever you handle a query, **you must always use the tools in the following order**:\n\n"
+        "1) **Read Financial Document Tool** — Start here. Load and extract the clean text content "
+        "from the provided PDF or financial file. Do not skip this step.\n\n"
+        "2) **Investment Analysis Tool** — Next, analyze the extracted text to evaluate profitability, "
+        "growth trends, and valuation metrics take the output from read financial document as input for this tool"
+        ". Identify strengths, weaknesses, and key investment factors.\n\n"
+        "3) **Risk Assessment Tool** — Then, assess associated risks. Look for financial, operational, "
+        "and market-related vulnerabilities that could affect performance.\n\n"
+        "4) **Search Tool (Serper)** — Finally, check for relevant real-time data, news, or events "
+        "influencing the company, industry, or macroeconomic environment.\n\n"
+        "Once all tools are used, synthesize the findings into a **clear and professional investment report** "
+        "that includes:\n"
+        "• Executive Summary\n"
+        "• Investment Highlights\n"
+        "• Risk Overview\n"
+        "• Market Context (from search)\n"
+        "• Final Recommendation (Buy / Hold / Sell) with a short rationale.\n\n"
+        "You are expected to use *every* tool in that order unless one fails. If a tool produces an error, "
+        "continue the process using the remaining tools and mention that the data was incomplete."
     ),
     tools=[
         tool_read,
@@ -102,10 +141,11 @@ investment_advisor = Agent(
     llm=llm,
     memory=True,
     verbose=True,
-    max_iter=3,
-    max_rpm=2,
+    max_iter=6,  # increased so it can call all tools and synthesize results
+    max_rpm=5,
     allow_delegation=False
 )
+
 
 
 # Creating a Risk Assessor agent

@@ -3,6 +3,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+import warnings
+warnings.filterwarnings("ignore", message="Cannot set gray non-stroke color*")
+
 import httpx
 # from crewai_tools import tools as crewai_tools
 from crewai.tools import tool
@@ -192,10 +195,13 @@ def _extract_assistant_content_from_response(resp) -> str:
         return ""
     
 
-async def _call_openai_chat_plain(prompt: str, model: str = "gpt-4o", max_tokens: int = 1000) -> str:
+def _call_openai_chat_plain(prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 1000) -> str:
     """
-    Call OpenAI >=1.0.0 client and return the assistant message text directly as a string.
-    Returns an "ERROR: ..." string when the client/key is missing or the call fails.
+    Synchronous OpenAI call returning assistant content as a plain string.
+    This version assumes the response shape where the first choice exposes:
+      resp.choices[0].message.content
+    or (fallback) resp.choices[0].text / resp.choices[0].content.
+    Returns "ERROR: ..." on failure.
     """
     if OpenAI is None:
         return "ERROR: openai package (>=1.0.0) not installed."
@@ -204,29 +210,45 @@ async def _call_openai_chat_plain(prompt: str, model: str = "gpt-4o", max_tokens
     if not api_key:
         return "ERROR: OPENAI_API_KEY not set in environment."
 
-    client = OpenAI(api_key=api_key)
+    try:
+        client = OpenAI(api_key=api_key)
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+            temperature=0.0,
+        )
 
-    def _sync_call():
+        # For this client/version the choice message is an object with .content
+        # Try the common attribute access patterns for this version:
         try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-                temperature=0.0,
-            )
-            # extract assistant content robustly
-            content = _extract_assistant_content_from_response(resp)
-            return content if content is not None else ""
-        except Exception as e:
-            return f"ERROR: OpenAI call failed: {e}"
+            first_choice = resp.choices[0]
+        except Exception:
+            return "ERROR: OpenAI response missing choices."
 
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _sync_call)
+        # Preferred: choice.message.content
+        message = getattr(first_choice, "message", None)
+        if message is not None:
+            content = getattr(message, "content", None)
+            if content is not None:
+                return str(content).strip()
 
-# class InvestmentTool:
+        # Fallbacks: choice.content or choice.text
+        content = getattr(first_choice, "content", None)
+        if content is not None:
+            return str(content).strip()
+        text = getattr(first_choice, "text", None)
+        if text is not None:
+            return str(text).strip()
 
+        # As a last resort, stringify the first choice
+        return str(first_choice).strip() or "ERROR: Empty LLM response."
+
+    except Exception as e:
+        return f"ERROR: OpenAI call failed: {e}"
+    
 @tool("Investment Analysis Tool")
-async def analyze_investment_tool(financial_document_data: str) -> str:
+def analyze_investment_tool(financial_document_data: str) -> str:
     """
     LLM-driven investment analysis that RETURNS A SINGLE PLAIN TEXT STRING.
 
@@ -282,7 +304,7 @@ async def analyze_investment_tool(financial_document_data: str) -> str:
     )
 
     model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    llm_text = await _call_openai_chat_plain(prompt, model=model_name, max_tokens=1000)
+    llm_text = _call_openai_chat_plain(prompt, model=model_name, max_tokens=1000)
 
     # If an error string was returned, propagate it
     if isinstance(llm_text, str) and llm_text.startswith("ERROR:"):
@@ -303,7 +325,7 @@ def _normalize_whitespace(s: str) -> str:
 # class RiskTool:
     
 @tool("Risk Assessment Tool")
-async def risk_assessment_tool(financial_document_data: str) -> str:
+def risk_assessment_tool(financial_document_data: str) -> str:
     """
     Create a risk assessment string from the provided financial document text.
 
@@ -362,7 +384,7 @@ async def risk_assessment_tool(financial_document_data: str) -> str:
     )
 
     model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    llm_text = await _call_openai_chat_plain(prompt, model=model_name, max_tokens=900)
+    llm_text = _call_openai_chat_plain(prompt, model=model_name, max_tokens=900)
 
     # pass through errors from helper
     if isinstance(llm_text, str) and llm_text.startswith("ERROR:"):
